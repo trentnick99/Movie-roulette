@@ -27,7 +27,8 @@ cd frontend && npm run dev
 | `scripts/e2e.sh` | Playwright: a complete game night in a real browser against a real server, real FFmpeg, generated test videos and a fake TMDB server, including a phone joining |
 
 TMDB is always mocked in tests (`backend/tests/fake_tmdb.py`); no key is needed. `scripts/e2e.sh` needs
-Playwright's Chromium (`npx playwright install chromium`) or `CHROMIUM_PATH`.
+a browser that can decode H.264: Google Chrome (`MR_E2E_CHANNEL=chrome`) or a Chromium build with codecs
+(`CHROMIUM_PATH`). Playwright's own Chromium download cannot play the clips.
 
 ## Database changes
 

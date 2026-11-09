@@ -13,6 +13,9 @@ export default defineConfig({
   reporter: [["list"]],
   use: {
     baseURL: process.env.MR_E2E_URL ?? "http://127.0.0.1:8765",
+    // Playwright's own Chromium has no H.264 decoder, so the clip could not play. Use Google Chrome
+    // (MR_E2E_CHANNEL=chrome, preinstalled on GitHub runners) or a Chromium build with codecs (CHROMIUM_PATH).
+    ...(process.env.MR_E2E_CHANNEL ? { channel: process.env.MR_E2E_CHANNEL } : {}),
     launchOptions: process.env.CHROMIUM_PATH
       ? { executablePath: process.env.CHROMIUM_PATH, args: ["--no-sandbox", "--autoplay-policy=no-user-gesture-required"] }
       : { args: ["--autoplay-policy=no-user-gesture-required"] },

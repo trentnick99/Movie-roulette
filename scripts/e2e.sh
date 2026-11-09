@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Browser end-to-end test of a whole game night against a real server, real FFmpeg and a fake TMDB.
-# Needs: .venv with backend requirements, frontend dependencies, FFmpeg, and Playwright's Chromium
-# (npx playwright install chromium) or CHROMIUM_PATH pointing at a Chromium binary.
+# Needs: .venv with backend requirements, frontend dependencies, FFmpeg, and an H.264-capable browser:
+# MR_E2E_CHANNEL=chrome (Google Chrome) or CHROMIUM_PATH pointing at a Chromium build with codecs.
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 work="$(mktemp -d)"

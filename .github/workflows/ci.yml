@@ -66,6 +66,16 @@ jobs:
           node-version: 22
       - run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg
       - run: python -m venv .venv && .venv/bin/pip install -r backend/requirements-dev.txt
-      - run: npm ci && npx playwright install --with-deps chromium && npm run build
+      - run: npm ci && npm run build
         working-directory: frontend
       - run: scripts/e2e.sh
+        env:
+          MR_E2E_CHANNEL: chrome
+      - if: failure()
+        run: cat frontend/test-results/*/error-context.md || true
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: frontend/test-results
+          retention-days: 7
