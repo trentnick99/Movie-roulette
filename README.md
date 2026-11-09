@@ -38,7 +38,7 @@ It runs entirely on your computer. Your movie files are only ever read: never up
 and extract it somewhere permanent (for example `C:\MovieRoulette`). The web interface is pre-built in release
 downloads, so you do not need Node.js.
 
-**From a git clone.** `git clone https://github.com/trentnick99/movie-roulette.git` works too; the first start then also
+**From a git clone.** `git clone https://github.com/trentnick99/Movie-roulette.git` works too; the first start then also
 needs [Node.js LTS](https://nodejs.org/) to build the interface once.
 
 You also need:
