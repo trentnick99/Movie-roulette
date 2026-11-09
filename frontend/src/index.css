@@ -1,0 +1,306 @@
+@import "@fontsource/bodoni-moda/500.css";
+@import "@fontsource/bodoni-moda/700.css";
+@import "@fontsource/bodoni-moda/500-italic.css";
+@import "@fontsource-variable/manrope/index.css";
+@import "tailwindcss";
+
+/*
+  Design notes - "projection booth"
+  The room is dark; the only warm light is the projector lamp (tungsten). Movie names are set like
+  title cards (Bodoni Moda); everything operational is set in Manrope. The film strip timeline and the
+  title-card reveal are the two signature moments - everything else stays quiet.
+*/
+@theme {
+  --color-booth: #18171b;
+  --color-house: #121114;
+  --color-panel: #211f24;
+  --color-panel-2: #2a272e;
+  --color-line: #36323b;
+  --color-screen: #ede6da;
+  --color-dim: #a39b90;
+  --color-faint: #6f6962;
+  --color-lamp: #e3a64a;
+  --color-lamp-deep: #b9802c;
+  --color-hit: #86b57f;
+  --color-miss: #c4544b;
+  --font-sans: "Manrope Variable", "Segoe UI", system-ui, sans-serif;
+  --font-title: "Bodoni Moda", "Didot", Georgia, serif;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(1200px 600px at 75% -10%, rgba(227, 166, 74, 0.07), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(120, 90, 140, 0.08), transparent 60%),
+    var(--color-booth);
+  background-attachment: fixed;
+  color: var(--color-screen);
+  font-family: var(--font-sans);
+  font-feature-settings: "tnum" 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+.title {
+  font-family: var(--font-title);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-lamp);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ------------------------------------------------------------- controls */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.6rem;
+  padding: 0.55rem 1rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border: 1px solid var(--color-line);
+  background: var(--color-panel-2);
+  color: var(--color-screen);
+  transition: background-color 120ms, border-color 120ms, opacity 120ms;
+  cursor: pointer;
+}
+.btn:hover:not(:disabled) {
+  background: #332f37;
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.btn-lamp {
+  background: var(--color-lamp);
+  border-color: var(--color-lamp);
+  color: #1b1408;
+}
+.btn-lamp:hover:not(:disabled) {
+  background: #eeb65f;
+}
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--color-dim);
+}
+.btn-ghost:hover:not(:disabled) {
+  background: var(--color-panel-2);
+  color: var(--color-screen);
+}
+.btn-hit {
+  background: color-mix(in srgb, var(--color-hit) 22%, transparent);
+  border-color: color-mix(in srgb, var(--color-hit) 55%, transparent);
+}
+.btn-miss {
+  background: color-mix(in srgb, var(--color-miss) 20%, transparent);
+  border-color: color-mix(in srgb, var(--color-miss) 50%, transparent);
+}
+.btn-sm {
+  padding: 0.3rem 0.65rem;
+  font-size: 0.8rem;
+  border-radius: 0.5rem;
+}
+
+.field {
+  width: 100%;
+  border-radius: 0.55rem;
+  border: 1px solid var(--color-line);
+  background: var(--color-house);
+  color: var(--color-screen);
+  padding: 0.55rem 0.75rem;
+  font: inherit;
+  font-size: 0.92rem;
+}
+.field:focus {
+  outline: none;
+  border-color: var(--color-lamp);
+}
+select.field {
+  appearance: auto;
+}
+.lbl {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--color-dim);
+  margin-bottom: 0.3rem;
+}
+
+.surface {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 0.9rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-line);
+  padding: 0.25rem 0.7rem;
+  font-size: 0.8rem;
+  color: var(--color-dim);
+  background: transparent;
+  cursor: pointer;
+}
+.chip[aria-pressed="true"] {
+  border-color: var(--color-lamp);
+  color: var(--color-screen);
+  background: color-mix(in srgb, var(--color-lamp) 14%, transparent);
+}
+
+/* ------------------------------------------------------------- film strip timeline */
+.filmstrip {
+  position: relative;
+  height: 64px;
+  border-radius: 6px;
+  background: #0d0c0f;
+  overflow: hidden;
+  touch-action: none;
+  cursor: pointer;
+  user-select: none;
+}
+.filmstrip::before,
+.filmstrip::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 9px;
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0 6px,
+    rgba(237, 230, 218, 0.16) 6px 13px,
+    transparent 13px 18px
+  );
+}
+.filmstrip::before {
+  top: 4px;
+}
+.filmstrip::after {
+  bottom: 4px;
+}
+.filmstrip .frames {
+  position: absolute;
+  inset: 17px 0;
+  background-image: repeating-linear-gradient(90deg, #1f1c22 0 38px, #0d0c0f 38px 41px);
+}
+.filmstrip .allowed {
+  position: absolute;
+  top: 17px;
+  bottom: 17px;
+  background: rgba(227, 166, 74, 0.13);
+  border-left: 1px solid rgba(227, 166, 74, 0.5);
+  border-right: 1px solid rgba(227, 166, 74, 0.5);
+}
+.filmstrip .gate {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  margin-left: -1.5px;
+  background: var(--color-lamp);
+  box-shadow: 0 0 18px 4px rgba(227, 166, 74, 0.45);
+}
+
+/* ------------------------------------------------------------- reveal title card */
+.reveal-card {
+  position: relative;
+  overflow: hidden;
+}
+.reveal-card .sweep {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 30%, rgba(255, 228, 180, 0.22) 50%, transparent 70%);
+  transform: translateX(-120%);
+  animation: sweep 1.6s 0.25s ease-out forwards;
+  pointer-events: none;
+}
+.reveal-card .rise {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: rise 0.7s ease-out forwards;
+}
+@keyframes sweep {
+  to {
+    transform: translateX(120%);
+  }
+}
+@keyframes rise {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes spin-reel {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.reel-spin {
+  animation: spin-reel 1.4s linear infinite;
+}
+
+[data-motion="off"] *,
+[data-motion="off"] *::before,
+[data-motion="off"] *::after {
+  animation: none !important;
+  transition: none !important;
+}
+[data-motion="off"] .reveal-card .rise {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal-card .sweep,
+  .reel-spin {
+    animation: none;
+  }
+  .reveal-card .rise {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line) transparent;
+}
+
+/* themes (Settings > Appearance) */
+[data-theme="midnight"] {
+  --color-booth: #121620;
+  --color-house: #0c0f16;
+  --color-panel: #1a1f2b;
+  --color-panel-2: #232a38;
+  --color-line: #2f3747;
+}
+[data-theme="noir"] {
+  --color-booth: #111111;
+  --color-house: #000000;
+  --color-panel: #1a1a1a;
+  --color-panel-2: #242424;
+  --color-line: #333333;
+  --color-lamp: #d8d2c4;
+  --color-lamp-deep: #a9a294;
+}

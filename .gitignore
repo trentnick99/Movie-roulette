@@ -1,0 +1,37 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Node / frontend
+node_modules/
+frontend/dist/
+frontend/test-results/
+frontend/playwright-report/
+
+# Local data - never commit: database, caches, logs, secrets, backups
+data/
+.env
+*.db
+*.db-wal
+*.db-shm
+secrets.json
+
+# Optional local FFmpeg copy
+tools/ffmpeg/
+
+# Movie files never belong in the repository
+*.mkv
+*.mp4
+*.avi
+*.mov
+*.m4v
+*.wmv
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

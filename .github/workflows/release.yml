@@ -1,0 +1,32 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build the web interface
+        working-directory: frontend
+        run: npm ci && npm run build
+      - name: Package (interface pre-built, so Windows users do not need Node.js)
+        run: |
+          name="MovieRoulette-${GITHUB_REF_NAME}-windows"
+          mkdir -p "dist/$name"
+          git archive HEAD | tar -x -C "dist/$name"
+          mkdir -p "dist/$name/frontend/dist" && cp -r frontend/dist/. "dist/$name/frontend/dist/"
+          rm -rf "dist/$name/.github"
+          (cd dist && zip -qr "$name.zip" "$name")
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          generate_release_notes: true
