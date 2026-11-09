@@ -46,8 +46,8 @@ def test_clip_is_accurate_and_clean(ffmpeg_available, tmp_path, vcodec, acodec, 
     playlist = (tmp_path / "streams" / token / "index.m3u8").read_text()
     assert "#EXT-X-ENDLIST" in playlist and "src" not in playlist
     # probe a segment directly (some static FFmpeg builds crash when ffprobe reads an HLS playlist)
-    out = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format_tags:stream=codec_name:stream_tags",
-                          "-of", "json", str(tmp_path / "streams" / token / "s00000.ts")],
+    out = subprocess.run(["ffprobe", "-v", "error", "-print_format", "json", "-show_format", "-show_streams",
+                          str(tmp_path / "streams" / token / "s00000.ts")],
                          capture_output=True, text=True, check=True).stdout
     assert "Secret Movie Title" not in out
     assert '"h264"' in out and '"aac"' in out
