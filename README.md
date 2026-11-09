@@ -71,7 +71,7 @@ opens the browser. The address is `http://127.0.0.1:8765/`.
 2. **Movie folders** - *Settings > Movie library > Add folder* (type the path or *Browse*). Exclude sub-folders
    you do not want (*Edit*). Folders named Extras, Featurettes, Trailers, Samples ... are skipped automatically, and
    files shorter than 20 minutes are treated as extras (both adjustable).
-3. **Scan now.** The first scan probes every file and asks TMDB about each movie; later scans only look at what
+3. **Scan now.** TV episodes in the same folders (S02E06, ep11 ...) are set aside automatically. The first scan probes every file and asks TMDB about each movie; later scans only look at what
    changed. Turn on automatic rescans in the same screen if you like.
 4. **Check uncertain matches** - the home screen and *Movie Library > Status: Needs a match check* list movies that
    were not matched with enough confidence. Open one, choose *Choose the right movie*, search if needed, and pick

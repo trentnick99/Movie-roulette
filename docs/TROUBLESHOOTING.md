@@ -19,6 +19,7 @@ Details of every error are in `data\logs\movie_roulette.jsonl`. `..\.venv\Script
 |---|---|
 | "FFprobe was not found" / no files found | install FFmpeg (`winget install Gyan.FFmpeg`) and start again, or put it in `tools\ffmpeg\bin`. |
 | Movies missing after a scan | check *Settings > Movie library > Files that could not be used*: files shorter than the minimum length are treated as extras, unreadable files are listed with the reason. Folders named Extras/Trailers/Samples are skipped. |
+| TV episodes in your movie folders | files named like episodes (S02E06, ep11, Ep.34) are listed under *Files that could not be used* instead of waiting for a match. Turn off *Skip TV episodes* in Settings > Movie library to include them. |
 | A movie is shown as "Needs a match check" | the name or running time did not identify it with confidence. Open it in the library and pick the right film. Lower *Auto-accept matches at confidence* if your files are named well. |
 | Wrong match | open the movie, *Change the match*. Your choice is kept on every rescan. |
 | "TMDB rejected the API key" | paste the key again; both the v3 *API Key* and the v4 *Read Access Token* work. |

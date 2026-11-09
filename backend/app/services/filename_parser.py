@@ -37,6 +37,24 @@ _GENERIC = re.compile(r"(?i)^(?:movie|film|video|feature|main|title[ _]?\d*|vts_
 _TRAILING_GROUP = re.compile(r"-[A-Za-z0-9]{2,15}$")
 
 
+_EPISODE = re.compile(
+    r"(?i)(?:\bS\d{1,2}[ ._-]?E\d{1,3}\b"      # S02E06, s1e3
+    r"|(?<![0-9a-z])\d{1,2}x\d{2}(?![0-9])"       # 2x06
+    r"|(?:^|[ ._\-\[(])ep(?:isode)?\.?[ ._-]?\d{1,4}(?![0-9]))")  # ep06, Ep.34, Ep 12, episode 05 (not 'Episode IV')
+
+
+def looks_like_episode(path: str) -> str | None:
+    """The episode marker when a file name looks like a TV episode, else None."""
+    m = _EPISODE.search(PurePath(path.replace("\\", "/")).stem)
+    return m.group(0).strip(" ._-[(") if m else None
+
+
+# 'Copy of X', 'X - Copy', 'X - Copy (2)' (Windows Explorer copies)
+_COPY = re.compile(r"(?i)^\s*copy\s+(?:\(\d+\)\s+)?of\s+|\s*-\s*copy(?:\s*\(\d+\))?\s*$")
+# MakeMKV / disc-rip track names: 'Movie-FPL_MainFeature_t14', 'Movie_t00', 'title_t01'
+_RIP = re.compile(r"(?i)[ ._-]*(?:(?:FPL_)?MainFeature(?:_t\d+)?|_t\d{2})\s*$")
+
+
 @dataclass(frozen=True)
 class ParsedName:
     title: str
@@ -60,7 +78,8 @@ def normalize_title(s: str) -> str:
 
 
 def _tidy(stem: str) -> tuple[str, int | None, int | None]:
-    t = _SITE_PREFIX.sub("", stem.strip())
+    t = _COPY.sub("", _SITE_PREFIX.sub("", stem.strip()))
+    t = _RIP.sub("", t)
     part = None
     m = _PART.search(t)
     if m:

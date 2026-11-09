@@ -206,3 +206,98 @@ def test_settings_validation():
         GameSettings(timestamp_manual=False, timestamp_random=False)
     with pytest.raises(ValueError):
         DifficultyPreset(clip_seconds=10, replays=0, hints=0, range_start_pct=50, range_end_pct=40)
+
+
+@pytest.mark.parametrize("name,marker", [
+    ("Invincible.S02E06.1080P.Hindi.English.mkv", "S02E06"),
+    ("ep06 The Mexican Staring Frog of Southern Sri Lanka.mkv", "ep06"),
+    ("Ep.34 - Piccolo vs Frost (1080p 60fps h264) [Slime Edit].mp4", "Ep.34"),
+    ("Spider-Man The Animated Series S01E08 The Alien Costume (1).mkv", "S01E08"),
+    ("Show 2x06.mkv", "2x06"),
+    ("Star Wars Episode IV - A New Hope (1977).mkv", None),
+    ("Sleepless.2017.1920x1080.mkv", None),
+    ("Stepmom (1998).mkv", None),
+    ("1917 (2019).mkv", None),
+])
+def test_episode_detection(name, marker):
+    from app.services.filename_parser import looks_like_episode
+
+    assert looks_like_episode(name) == marker
+
+
+def test_scoring_real_library_cases():
+    """Cases from a real library that should be accepted automatically."""
+    def best(title, year, dur_min, runtime, popularity=10):
+        r = {"id": 1, "title": title, "release_date": f"{year}-01-01", "popularity": popularity}
+        return score_candidate(r, title_in, year_in, dur_min * 60, runtime)
+
+    title_in, year_in = "Kick-Ass 2", None  # no year in the name, runtime matches
+    assert best("Kick-Ass 2", 2013, 103, 103).score >= 85
+    title_in, year_in = "Daredevil", 2003  # director's cut, 30 minutes longer than TMDB's runtime
+    assert best("Daredevil", 2003, 133, 103).score >= 85
+    title_in, year_in = "IronMan", 2008  # run-together name
+    assert best("Iron Man", 2008, 126, 126).score >= 85
+    # a much *shorter* file is still suspicious
+    title_in, year_in = "Daredevil", 2003
+    assert best("Daredevil", 2003, 60, 103).score < 85
+
+
+def test_ironman_query_split():
+    fake = FakeTMDB()
+    res = find_matches(_client(fake), "IronMan", 2008, 126 * 60)
+    assert res.auto_accept and res.best.tmdb_id == 1726
+
+
+def test_image_download_concurrent(tmp_path):
+    """Several screens asking for the same poster at once: one download, no errors, no leftover temp files."""
+    import threading
+
+    from app.services.tmdb import fetch_image
+
+    calls = []
+
+    def handler(request):
+        calls.append(1)
+        import time as _t
+
+        _t.sleep(0.2)
+        return httpx.Response(200, content=b"\xff\xd8jpeg-bytes")
+
+    transport = httpx.MockTransport(handler)
+    errors = []
+
+    def go():
+        try:
+            fetch_image(tmp_path, "w342", "/abc.jpg", transport=transport, base="https://img.test/t/p")
+        except Exception as e:  # pragma: no cover - would fail the test
+            errors.append(e)
+
+    threads = [threading.Thread(target=go) for _ in range(6)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert errors == [] and len(calls) == 1
+    assert sorted(p.name for p in (tmp_path / "w342").iterdir()) == ["abc.jpg"]
+
+
+@pytest.mark.parametrize("path,title,year", [
+    ("Copy of [60FPS] The Dark Knight 2008 IMAX 1080p BluRay SDR [ENG + HIN] Esub.mkv", "The Dark Knight", 2008),
+    ("The Matrix (1999) - Copy (2).mkv", "The Matrix", 1999),
+    ("Spider-Man- Into the Spider-Verse-FPL_MainFeature_t14.mp4", "Spider-Man- Into the Spider-Verse", None),
+    ("Heat_t00.mkv", "Heat", None),
+    ("Copycat (1995).mkv", "Copycat", 1995),
+])
+def test_parse_copies_and_rips(path, title, year):
+    p = parse_movie_path(path)
+    assert (p.title, p.year) == (title, year)
+
+
+def test_query_variants():
+    from app.services.matcher import _queries
+
+    assert "X-Men First Class" in _queries("5 X-Men 5 First Class")
+    assert "X-Men Days of Future Past" in _queries("X-Men 7 Days of Future Past")
+    assert _queries("Iron Man 3") == ["Iron Man 3"]
+    assert "Thunderbolts" in _queries("Thunderboltsx")
+    assert "Iron Man" in _queries("IronMan")

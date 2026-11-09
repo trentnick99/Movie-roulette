@@ -20,7 +20,7 @@ from .. import db as dbm
 from ..models import GameRound, LibraryDirectory, LibraryScan, MatchCandidate, Movie, MovieFile
 from ..security import is_within, norm
 from . import categories, settings
-from .filename_parser import parse_movie_path
+from .filename_parser import looks_like_episode, parse_movie_path
 from .matcher import find_matches
 from .media_tools import IGNORED_EXTENSIONS, VIDEO_EXTENSIONS, ProbeResult, probe
 from .metadata import link_movie
@@ -58,7 +58,8 @@ class Discovered:
 class ScanStats:
     counts: dict[str, int] = field(default_factory=lambda: {
         "files_seen": 0, "added": 0, "updated": 0, "unchanged": 0, "moved": 0, "duplicates": 0, "missing": 0,
-        "corrupt": 0, "inaccessible": 0, "unsupported": 0, "matched": 0, "needs_review": 0, "match_errors": 0})
+        "corrupt": 0, "inaccessible": 0, "unsupported": 0, "episodes": 0, "matched": 0, "needs_review": 0,
+        "match_errors": 0})
 
     def inc(self, k: str, n: int = 1) -> None:
         self.counts[k] = self.counts.get(k, 0) + n
@@ -173,7 +174,8 @@ class Scanner:
                 self._mark_inaccessible(f, item)
             elif f is not None and f.size == item.size and abs(f.mtime - item.mtime) < 1 and f.status == "ok":
                 f.last_scanned_at = datetime.now(UTC)
-                self.stats.inc("unchanged")
+                if not self._set_aside_episode(f):
+                    self.stats.inc("unchanged")
             else:
                 created = self._inspect(f, item)
                 if created is not None:
@@ -240,10 +242,31 @@ class Scanner:
             return None
         f.status, f.error = "ok", None
         self.db.flush()
+        if self._set_aside_episode(f):
+            return None
         if is_new or f.movie_id is None:
             return f
         self.stats.inc("updated")
         return None
+
+    def _set_aside_episode(self, f: MovieFile) -> bool:
+        """TV episodes are not movies: record them as unsupported (with the reason) so they stay out of matching,
+        the review queue and games. A movie the host already confirmed is left alone."""
+        if not self.lib.skip_tv_episodes:
+            return False
+        marker = looks_like_episode(f.path)
+        if not marker:
+            return False
+        movie = self.db.get(Movie, f.movie_id) if f.movie_id else None
+        if movie is not None and movie.confirmed:
+            return False
+        f.status = "unsupported"
+        f.error = (f"Looks like a TV episode ({marker}), not a movie. "
+                   "To include episodes, turn off 'Skip TV episodes' in Settings > Library.")
+        f.movie_id, f.duplicate_of_id = None, None
+        self.stats.inc("episodes")
+        self.db.flush()
+        return True
 
     def _mark_missing(self, seen: set[str], reachable: set[int], dirs: list[LibraryDirectory]) -> None:
         enabled_roots = [d.path for d in dirs]
@@ -327,7 +350,8 @@ class Scanner:
 
     def match_pending(self) -> None:
         pending = (self.db.query(Movie)
-                   .filter(Movie.metadata_status.in_(("unmatched", "failed")), Movie.confirmed.is_(False))
+                   .filter(Movie.metadata_status.in_(("unmatched", "failed", "needs_review")),
+                           Movie.confirmed.is_(False))
                    .filter(Movie.files.any(MovieFile.status == "ok")).all())
         self._commit_progress("matching", 0, len(pending))
         tm = settings.tmdb(self.db)

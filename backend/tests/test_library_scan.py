@@ -179,3 +179,48 @@ def test_refresh_and_retry_jobs(library, host, tmdb_key):
 def test_scan_requires_folder_and_key(host):
     assert host.post("/api/scans", json={"mode": "scan"}).json()["detail"]["code"] == "no_directories"
     assert host.post("/api/scans", json={"mode": "refresh"}).json()["detail"]["code"] == "no_tmdb_key"
+
+
+def test_tv_episodes_are_set_aside(host, tmdb_key, fake_probe, tmp_path):
+    root = tmp_path / "Media"
+    write_fake_movie(root / "Alien (1979).mkv")
+    write_fake_movie(root / "South Park" / "ep06 The Mexican Staring Frog.mkv", 22 * 60 + 0.5)
+    write_fake_movie(root / "Invincible" / "Invincible.S02E06.1080p.mkv", 45 * 60)
+    host.patch("/api/settings/library", json={"min_duration_minutes": 20})
+    host.post("/api/directories", json={"path": str(root)})
+    scan = scan_and_wait(host)
+    assert scan["counts"]["episodes"] == 2
+    assert host.get("/api/movies", params={"status": "needs_review"}).json()["total"] == 0
+    issues = {i["filename"]: i for i in host.get("/api/files/issues").json()}
+    assert "TV episode (S02E06)" in issues["Invincible.S02E06.1080p.mkv"]["error"]
+    # turning the setting off brings them back as candidates on the next scan
+    host.patch("/api/settings/library", json={"skip_tv_episodes": False})
+    scan = scan_and_wait(host)
+    with db.session_scope() as s:
+        assert s.query(MovieFile).filter(MovieFile.status == "ok").count() == 3
+
+
+def test_existing_episodes_cleaned_up_on_rescan(host, tmdb_key, fake_probe, tmp_path):
+    """Libraries scanned before episode detection: unchanged episode files leave the review queue."""
+    root = tmp_path / "Media"
+    write_fake_movie(root / "Show.S01E01.mkv", 45 * 60)
+    host.patch("/api/settings/library", json={"skip_tv_episodes": False})
+    host.post("/api/directories", json={"path": str(root)})
+    scan_and_wait(host)
+    with db.session_scope() as s:
+        assert s.query(Movie).count() == 1
+    host.patch("/api/settings/library", json={"skip_tv_episodes": True})
+    scan = scan_and_wait(host)
+    assert scan["counts"]["episodes"] == 1
+    with db.session_scope() as s:
+        assert s.query(Movie).count() == 0  # unused, unconfirmed placeholder removed
+
+
+def test_rescan_retries_needs_review(library, host, tmdb_key):
+    """Movies waiting for review are looked up again on later scans (e.g. after better matching rules)."""
+    with db.session_scope() as s:
+        m = s.query(Movie).filter(Movie.title == "Toy Story").one()
+        m.metadata_status, m.confirmed, m.tmdb_id = "needs_review", False, None
+    scan_and_wait(host, "match")
+    with db.session_scope() as s:
+        assert s.query(Movie).filter(Movie.tmdb_id == 862).one().metadata_status == "matched"

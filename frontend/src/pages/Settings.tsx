@@ -193,6 +193,12 @@ function LibraryTab({ s, reload }: { s: SettingsResp; reload: () => Promise<void
           <Num label="Ignore files shorter than (minutes)" value={sec.draft.min_duration_minutes} onChange={(v) => sec.set("min_duration_minutes", v ?? 0)} hint="Skips samples, trailers and extras." />
           <Num label="Auto-accept matches at confidence" value={sec.draft.auto_accept_confidence} onChange={(v) => sec.set("auto_accept_confidence", v ?? 85)} hint="Lower matches wait for you." />
         </div>
+        <Toggle
+          checked={sec.draft.skip_tv_episodes}
+          onChange={(v) => sec.set("skip_tv_episodes", v)}
+          label="Skip TV episodes"
+          hint="Files named like episodes (S02E06, ep11, Ep.34) are listed under files not used instead of waiting for a movie match."
+        />
         <div className="grid sm:grid-cols-2 gap-4 mt-4">
           <div>
             <label className="lbl" htmlFor="skip">Skip folders named</label>

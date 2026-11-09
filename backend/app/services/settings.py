@@ -25,6 +25,7 @@ class LibrarySettings(BaseModel):
         "extras", "featurettes", "trailers", "sample", "samples", "behind the scenes", "deleted scenes", "bonus",
         "$recycle.bin", "system volume information"])
     duplicate_preference: Literal["highest_resolution", "largest", "first_found"] = "highest_resolution"
+    skip_tv_episodes: bool = True
 
 
 class TMDBSettings(BaseModel):

@@ -7,7 +7,7 @@ the database, so they survive updates and are included in backups.
 
 | Screen | Settings |
 |---|---|
-| Movie library | folders (add, edit path, exclude sub-folders, turn scanning on/off, remove), automatic rescan interval, minimum length (shorter files count as extras), auto-accept confidence for TMDB matches, folder names to skip, which copy to play when a movie has several |
+| Movie library | folders (add, edit path, exclude sub-folders, turn scanning on/off, remove), automatic rescan interval, minimum length (shorter files count as extras), auto-accept confidence for TMDB matches, skip TV episodes (on by default), folder names to skip, which copy to play when a movie has several |
 | TMDB | API key (checked before saving), connection test, language, adult titles in searches, how long TMDB answers are cached, cast members stored, refresh all metadata, clear the cache |
 | Playback | default clip or continuous, default clip length, continuous time limit, default volume, stream quality (1080p/720p/480p), clip preparation speed, preferred audio language, video on players' phones |
 | Game rules | manual and/or random timestamps, players choosing on their own phone, host override, skip opening/end credits (seconds, or chapter markers), earliest/latest start, difficulty presets (clip length, replays, hints, allowed part of the movie in %, points multiplier), default difficulty, rounds, who may guess, hints, default repeat rule, default categories |

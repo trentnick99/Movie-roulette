@@ -7,6 +7,7 @@ Credentials are never written to logs or cache keys.
 from __future__ import annotations
 
 import logging
+import os
 import re
 import threading
 import time
@@ -199,6 +200,22 @@ def fetch_image(image_dir: Path, size: str, path: str, transport: httpx.BaseTran
     dest = image_local_path(image_dir, size, path)
     if dest.is_file() and dest.stat().st_size > 0:
         return dest
+    with _image_lock(dest):  # two screens asking for the same poster download it once
+        if dest.is_file() and dest.stat().st_size > 0:
+            return dest
+        return _download_image(dest, size, path, transport, base)
+
+
+_image_locks: dict[str, threading.Lock] = {}
+_image_locks_guard = threading.Lock()
+
+
+def _image_lock(dest: Path) -> threading.Lock:
+    with _image_locks_guard:
+        return _image_locks.setdefault(str(dest), threading.Lock())
+
+
+def _download_image(dest: Path, size: str, path: str, transport: httpx.BaseTransport | None, base: str) -> Path:
     dest.parent.mkdir(parents=True, exist_ok=True)
     try:
         with httpx.Client(timeout=20, transport=transport, follow_redirects=True) as c:
@@ -207,9 +224,17 @@ def fetch_image(image_dir: Path, size: str, path: str, transport: httpx.BaseTran
         raise TMDBError("network", "Could not download the image from TMDB.") from e
     if r.status_code != 200 or not r.content:
         raise TMDBError("not_found", "Image not available.", r.status_code)
-    tmp = dest.with_suffix(dest.suffix + ".part")
-    tmp.write_bytes(r.content)
-    tmp.replace(dest)
+    tmp = dest.with_name(f"{dest.name}.{os.getpid()}.{threading.get_ident()}.part")
+    try:
+        tmp.write_bytes(r.content)
+        try:
+            tmp.replace(dest)
+        except PermissionError:
+            # Windows refuses to replace a file another request is reading; that file is already complete.
+            if not (dest.is_file() and dest.stat().st_size > 0):
+                raise
+    finally:
+        tmp.unlink(missing_ok=True)
     return dest
 
 
